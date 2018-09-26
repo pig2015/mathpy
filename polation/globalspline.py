@@ -30,6 +30,34 @@ class GlobalSpline2D(interpolate.interp2d):
                           'length no less than '
                           '{}'.format(size, spline_kind, size))
 
+    @staticmethod
+    def _extrap1d(xs, ys, tar_x):
+        if isinstance(xs, np.ndarray):
+            xs = np.ndarray.flatten(xs)
+        if isinstance(ys, np.ndarray):
+            ys = np.ndarray.flatten(ys)
+        assert len(xs) >= 4
+        assert len(xs) == len(ys)
+        f = interpolate.InterpolatedUnivariateSpline(xs, ys)
+        return f(tar_x)
+
+    @staticmethod
+    def _linspace_10(p1, p2, cut=None):
+        ls = list(np.linspace(p1, p2, 10))
+        if cut is None:
+            return ls
+        assert cut <= 10
+        return ls[-cut:] if cut < 0 else ls[:cut]
+
+    def _get_extrap_based_points(self, axis, extrap_p):
+        if axis == 'x':
+            return (self.extrap_fd_based_xs if extrap_p > self.x_max else
+                    self.extrap_bd_based_xs if extrap_p < self.x_min else [])
+        elif axis == 'y':
+            return (self.extrap_fd_based_ys if extrap_p > self.y_max else
+                    self.extrap_bd_based_ys if extrap_p < self.y_min else [])
+        assert False, 'axis unknown'
+        
     def __call__(self, x_, y_, **kwargs):
         xs = np.atleast_1d(x_)
         ys = np.atleast_1d(y_)
@@ -81,30 +109,3 @@ class GlobalSpline2D(interpolate.interp2d):
             zss = zss[0]
         return np.array(zss)
 
-    @staticmethod
-    def _extrap1d(xs, ys, tar_x):
-        if isinstance(xs, np.ndarray):
-            xs = np.ndarray.flatten(xs)
-        if isinstance(ys, np.ndarray):
-            ys = np.ndarray.flatten(ys)
-        assert len(xs) >= 4
-        assert len(xs) == len(ys)
-        f = interpolate.InterpolatedUnivariateSpline(xs, ys)
-        return f(tar_x)
-
-    @staticmethod
-    def _linspace_10(p1, p2, cut=None):
-        ls = list(np.linspace(p1, p2, 10))
-        if cut is None:
-            return ls
-        assert cut <= 10
-        return ls[-cut:] if cut < 0 else ls[:cut]
-
-    def _get_extrap_based_points(self, axis, extrap_p):
-        if axis == 'x':
-            return (self.extrap_fd_based_xs if extrap_p > self.x_max else
-                    self.extrap_bd_based_xs if extrap_p < self.x_min else [])
-        elif axis == 'y':
-            return (self.extrap_fd_based_ys if extrap_p > self.y_max else
-                    self.extrap_bd_based_ys if extrap_p < self.y_min else [])
-        assert False, 'axis unknown'
